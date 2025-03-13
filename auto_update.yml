@@ -1,6 +1,7 @@
 ---
 - name: Apply Security Patches to Ubuntu 24.04 and Apache2
   hosts: all
+  connection: ssh
   become: yes
   tasks:
     - name: Update package cache
