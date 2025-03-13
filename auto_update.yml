@@ -1,6 +1,6 @@
 ---
 - name: Apply Security Patches to Ubuntu 24.04 and Apache2
-  hosts: localhost
+  hosts: all
   connection: local
   become: yes
   tasks:
