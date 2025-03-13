@@ -1,0 +1,8 @@
+---
+apache_package: apache2
+apache_service: apache2
+apache_service_binary: apache2
+apache_ctl_binary: apache2ctl
+apache_doc_root: /var/www/html
+apache_user: www-data
+apache_group: www-data
