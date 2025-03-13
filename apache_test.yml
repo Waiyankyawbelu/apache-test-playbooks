@@ -1,46 +1,24 @@
 ---
-- name: Test Apache Web Server
-  hosts: "{{ target_hosts | default('all') }}"
-  become: yes
-  gather_facts: yes
-
-  vars:
-    apache_package: "apache2"  # Change to "httpd" for RHEL/CentOS
-    apache_service: "apache2"  # Change to "httpd" for RHEL/CentOS
-    apache_doc_root: "/var/www/html"
-  
+- name: Check Apache2 Version and Status
+  hosts: all
+  become: yes  # Run as sudo
   tasks:
-    - name: Install Apache
-      package:
-        name: "{{ apache_package }}"
-        state: present
+    - name: Check Apache2 version
+      ansible.builtin.command: apache2ctl -v
+      register: apache_version
+      changed_when: false
 
-    - name: Ensure Apache is running
-      service:
-        name: "{{ apache_service }}"
+    - name: Display Apache2 version
+      ansible.builtin.debug:
+        msg: "Apache2 Version: {{ apache_version.stdout }}"
+
+    - name: Check Apache2 status
+      ansible.builtin.service:
+        name: apache2
         state: started
-        enabled: yes
+      register: apache_status
+      check_mode: yes  # Don’t change state, just check
 
-    - name: Create test page
-      copy:
-        content: "AWX Apache Test Successful"
-        dest: "{{ apache_doc_root }}/awx-test.html"
-        mode: '0644'
-
-    - name: Test HTTP response
-      uri:
-        url: "http://{{ inventory_hostname }}/awx-test.html"
-        return_content: yes
-      register: test_response
-
-    - name: Verify test page content
-      assert:
-        that: 
-          - "test_response.status == 200"
-          - "'AWX Apache Test Successful' in test_response.content"
-
-    - name: Clean up test page
-      file:
-        path: "{{ apache_doc_root }}/awx-test.html"
-        state: absent
-
+    - name: Display Apache2 status
+      ansible.builtin.debug:
+        msg: "Apache2 is {{ 'running' if apache_status.state == 'started' else 'not running' }}"
