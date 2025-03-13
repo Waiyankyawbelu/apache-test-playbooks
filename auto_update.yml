@@ -1,6 +1,6 @@
 ---
 - name: Apply Security Patches to Ubuntu 24.04 and Apache2
-  hosts: localhost
+  hosts: 192.168.1.166
   connection: local  # Run on the AWX VM itself
   become: yes        # Escalate to sudo
   tasks:
