@@ -3,63 +3,44 @@
   hosts: "{{ target_hosts | default('all') }}"
   become: yes
   gather_facts: yes
+
+  vars:
+    apache_package: "apache2"  # Change to "httpd" for RHEL/CentOS
+    apache_service: "apache2"  # Change to "httpd" for RHEL/CentOS
+    apache_doc_root: "/var/www/html"
   
   tasks:
-    - name: Ensure Apache is installed
+    - name: Install Apache
       package:
         name: "{{ apache_package }}"
         state: present
-      register: apache_install
-      
-    - name: Get Apache version
-      command: "{{ apache_service_binary }} -v"
-      register: apache_version
-      changed_when: false
-      
-    - name: Display Apache version
-      debug:
-        var: apache_version.stdout_lines
-        
-    - name: Ensure Apache service is running
+
+    - name: Ensure Apache is running
       service:
         name: "{{ apache_service }}"
         state: started
         enabled: yes
-      register: apache_service_status
-        
-    - name: Check Apache configuration syntax
-      command: "{{ apache_ctl_binary }} configtest"
-      register: apache_config_test
-      changed_when: false
-      
-    - name: Display configuration test results
-      debug:
-        var: apache_config_test.stdout_lines
-        
+
     - name: Create test page
       copy:
         content: "AWX Apache Test Successful"
         dest: "{{ apache_doc_root }}/awx-test.html"
-        owner: "{{ apache_user }}"
-        group: "{{ apache_group }}"
         mode: '0644'
-      
+
     - name: Test HTTP response
       uri:
         url: "http://{{ inventory_hostname }}/awx-test.html"
         return_content: yes
       register: test_response
-      delegate_to: localhost
-      
+
     - name: Verify test page content
       assert:
         that: 
           - "test_response.status == 200"
           - "'AWX Apache Test Successful' in test_response.content"
-        fail_msg: "HTTP test failed: Status {{ test_response.status }}"
-        success_msg: "Apache HTTP test successful"
-      
+
     - name: Clean up test page
       file:
         path: "{{ apache_doc_root }}/awx-test.html"
         state: absent
+
