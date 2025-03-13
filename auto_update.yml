@@ -1,19 +1,20 @@
 ---
 - name: Apply Security Patches to Ubuntu 24.04 and Apache2
-  hosts: 192.168.1.166
-  connection: local  # Run on the AWX VM itself
-  become: yes        # Escalate to sudo
+  hosts: localhost
+  connection: local
+  become: yes
   tasks:
     - name: Update package cache
       ansible.builtin.apt:
         update_cache: yes
-        cache_valid_time: 3600  # Refresh cache if older than 1 hour
+        cache_valid_time: 3600
+      register: cache_update
 
     - name: Upgrade all packages to the latest version
       ansible.builtin.apt:
         name: "*"
         state: latest
-        update_cache: no  # Already updated above
+        update_cache: no
       register: apt_upgrade
 
     - name: Check if Apache2 needs restart
@@ -23,8 +24,16 @@
       when: apt_upgrade.changed and 'apache2' in apt_upgrade.stdout
       register: apache_restart
 
+    - name: Check for reboot requirement
+      ansible.builtin.command: /usr/bin/needs-restarting -r
+      register: reboot_needed
+      changed_when: false
+      failed_when: false
+
     - name: Display patching results
       ansible.builtin.debug:
         msg:
+          - "Cache updated: {{ cache_update.changed | ternary('Yes', 'No') }}"
           - "Packages updated: {{ apt_upgrade.changed | ternary('Yes', 'No') }}"
           - "Apache2 restarted: {{ apache_restart.changed | ternary('Yes', 'No') }}"
+          - "Reboot required: {{ reboot_needed.rc == 1 | ternary('Yes', 'No') }}"
