@@ -10,13 +10,6 @@
         cache_valid_time: 3600
       register: cache_update
 
-    - name: Check if Apache2 needs restart
-      ansible.builtin.service:
-        name: apache2
-        state: restarted
-      when: apt_upgrade.changed and 'apache2' in apt_upgrade.stdout
-      register: apache_restart
-
     - name: Check for reboot requirement
       ansible.builtin.command: /usr/bin/needs-restarting -r
       register: reboot_needed
